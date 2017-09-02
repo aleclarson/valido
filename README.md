@@ -22,6 +22,7 @@ The built-in types include:
 - `any` (where undefined is invalid)
 - `array`
 - `boolean`
+- `buffer` (NodeJS only)
 - `date`
 - `error`
 - `function`
