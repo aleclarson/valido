@@ -7,10 +7,10 @@ module.exports = (types) ->
   validator = {}
 
   if optional = types[types.length - 1] is "?"
-    types.pop()
+    types = types.slice 0, -1
 
   if nullable = types[types.length - 1] is "null"
-    types.pop()
+    types = types.slice 0, -1
 
   names = null
   error = (key) ->
