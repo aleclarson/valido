@@ -1,0 +1,9 @@
+{
+  "name": "valido",
+  "version": "1.0.2",
+  "main": "js/index",
+  "dependencies": {
+    "isObject": "aleclarson/isObject#1.0.0",
+    "setProto": "aleclarson/setProto#1.0.1"
+  }
+}
