@@ -1,7 +1,7 @@
 
-# valido v1.0.0 
+# valido v1.0.1 
 
-> npm install aleclarson/valido#1.0.0
+> npm install aleclarson/valido#1.0.1
 
 ```js
 const valido = require('valido')
@@ -22,6 +22,7 @@ The built-in types include:
 - `any` (where undefined is invalid)
 - `array`
 - `boolean`
+- `buffer` (NodeJS only)
 - `date`
 - `error`
 - `function`

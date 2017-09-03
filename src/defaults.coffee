@@ -40,3 +40,8 @@ exports.promise =
 exports.any =
   test: (value) -> value isnt undefined
   error: (key) -> TypeError "`#{key}` must be defined"
+
+if typeof process isnt "undefined"
+  exports.buffer =
+    test: Buffer.isBuffer
+    error: (key) -> wrongType key, "buffer"
