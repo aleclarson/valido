@@ -26,6 +26,12 @@ valido.set = (tag, config) ->
 
 module.exports = valido
 
+# Built-in addons
+require "./addons/Constructor"
+require "./addons/Either"
+require "./addons/Maybe"
+require "./addons/Shape"
+
 #
 # Built-in primitives
 #

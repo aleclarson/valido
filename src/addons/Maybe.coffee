@@ -1,31 +1,29 @@
 
 registry = require "../registry"
-Either = require "./Either"
+valido = require "../valido"
 
-expected = null
-validator = {}
+addons = valido._addons
 
-validator.test = (value) ->
-  valid = value is undefined or getValidator().test value
-  expected = null
-  return valid
+validateMaybe = (value) ->
+  return true if value is undefined
+  return @type.validate value
 
-validator.assert = (value) ->
+assertMaybe = (value) ->
+  if value isnt undefined
+    return @type.assert value
 
-  if value is undefined
-    expected = null
-    return
+validator = valido
+  validate: validateMaybe
+  assert: assertMaybe
 
-  error = getValidator().assert value
-  expected = null
-  return error
+validator.init = (type) ->
+  @type =
+    if type.indexOf("|") isnt -1
+    then addons.Either type.split "|"
+    else registry.get type
+  return
 
-getValidator = ->
-  if 0 <= expected.indexOf "|"
-    return Either expected.split "|"
-  return registry.get expected
-
-# The `type` argument must be a string.
-module.exports = (type) ->
-  expected = type
-  return validator
+addons.Maybe = (type) ->
+  inst = Object.create validator
+  inst.init type
+  return inst

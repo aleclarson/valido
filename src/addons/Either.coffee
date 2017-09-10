@@ -1,51 +1,53 @@
 
-wrongType = require "../wrongType"
-registry = require "../registry"
+identifyType = require "../utils/identifyType"
+resolveType = require "../utils/resolveType"
+wrongType = require "../utils/wrongType"
+valido = require "../valido"
 
-# The `types` argument must be an array.
-module.exports = (types) ->
-  validator = {}
+addons = valido._addons
 
-  if optional = types[types.length - 1] is "?"
+validateEither = (value) ->
+  return @optional if value is undefined
+  return @nullable if value is null
+  for type in @types
+    result = type.validate value
+    return result if result isnt false
+  return false
+
+assertEither = (value) ->
+  for type in @types
+    result = type.validate value
+    return if result is true
+    if typeof result is "string"
+      return type.error.bind type, result
+  return @error.bind this
+
+validator =
+  validate: validateEither
+  assert: assertEither
+
+validator.init = (types) ->
+
+  unless Array.isArray types
+    throw TypeError "Expected an array"
+
+  if @optional = types[types.length - 1] is "?"
     types = types.slice 0, -1
 
-  if nullable = types[types.length - 1] is "null"
+  if @nullable = types[types.length - 1] is "null"
     types = types.slice 0, -1
 
-  names = null
-  error = (key) ->
-    unless names
-      names = types.reduce getName, []
-      names.push "null" if nullable
-    return wrongType key, names
+  @types = types.map resolveType
+  return
 
-  validator.test = (value) ->
-    return optional if value is undefined
-    return nullable if value is null
-    for type in types
+validator.error = (key) ->
+  names = identifyType @types
+  names.push "null" if @nullable
+  return wrongType key, names
 
-      if typeof type is "string"
-        return yes if registry.get(type).test value
+valido.add validator, Array.isArray
 
-      else if typeof type is "function"
-        return yes if value.constructor is type
-
-      else if typeof type.test is "function"
-        return yes if type.test value
-
-      else throw Error "Malformed validator"
-
-    return no
-
-  validator.assert = (value) ->
-    unless @test value
-      return error
-
-  return validator
-
-getName = (names, type) ->
-  if typeof type is "string"
-    names.push type
-  else if type.name
-    names.push type.name
-  return names
+addons.Either = (types) ->
+  inst = Object.create validator
+  inst.init types
+  return inst

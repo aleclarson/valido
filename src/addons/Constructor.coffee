@@ -1,24 +1,25 @@
 
-wrongType = require "../wrongType"
+wrongType = require "../utils/wrongType"
+valido = require "../valido"
 
-expected = null
-validator = {}
+testConstructor = (value) ->
+  return value? and value.constructor is @type
 
-validator.test = (value) ->
-  valid = value? and value.constructor is expected
-  expected = null
-  return valid
+assertConstructor = (value) ->
+  if !value? or value.constructor isnt @type
+    return @error.bind this
 
-validator.assert = (value) ->
+validator =
+  test: testConstructor
+  assert: assertConstructor
 
-  if value? and value.constructor is expected
-    expected = null
-    return
+validator.init = (type) ->
+  @name = type.name
+  @type = type
+  return
 
-  {name} = expected
-  expected = null
-  return (key) -> wrongType key, name
+validator.error = (key) ->
+  return wrongType key, @name
 
-module.exports = (type) ->
-  expected = type
-  return validator
+valido.add validator, (value) ->
+  typeof value is "function"
