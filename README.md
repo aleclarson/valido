@@ -1,7 +1,7 @@
 
-# valido v1.0.2 
+# valido v1.1.0 
 
-> npm install aleclarson/valido#1.0.1
+> npm install aleclarson/valido#1.1.0
 
 ```js
 const valido = require('valido')

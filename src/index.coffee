@@ -1,167 +1,82 @@
 
-setProto = require "setProto"
 isObject = require "isObject"
 
-wrongType = require "./wrongType"
+wrongType = require "./utils/wrongType"
 registry = require "./registry"
 
-# Built-in validators
-Constructor = require "./validators/Constructor"
-Optional = require "./validators/Optional"
-Either = require "./validators/Either"
+valido = require "./valido"
 
-# Create a validator that is not stored in the registry.
-valido = (name, validator) ->
+valido.get = require "./utils/resolveType"
 
-  if typeof name isnt "string"
-    validator = name
-    name = ""
+valido.set = (tag, config) ->
 
-  # Validate with an array of constructors/strings/validators.
-  if Array.isArray validator
-    validator = Either validator
+  if typeof tag isnt "string"
+    throw TypeError "`tag` must be a string"
 
-  # Validate with a function that returns an error constructor.
-  else if typeof validator is "function"
-    validator = {test: defaultTest, assert: validator}
+  if typeof config is "function"
+    validator = valido {assert: config}
 
-  # Validate with an object containing `test` and `error/assert` functions.
-  else if isObject validator
-    unless isValidator validator
-      validator = createShape validator
+  else if isObject config
+    validator = valido config
 
-  else throw TypeError "Expected an object, function, or array"
+  else throw TypeError "Expected an object or function"
 
-  validator.name = name
-  return setProto validator, valido.prototype
-
-# Resolve the given type into a validator.
-valido.get = (type) ->
-
-  if typeof type is "string"
-
-    if type[type.length - 1] is "?"
-      return Optional type.slice 0, -1
-
-    if 0 <= type.indexOf "|"
-      return Either type.split "|"
-
-    return registry.get type
-
-  if type.constructor is valido
-    return type
-
-  if typeof type is "function"
-    return Constructor type
-
-  if isObject type
-    return createShape type
-
-  if Array.isArray type
-    return Either type
-
-  throw Error "Unknown type: '#{type}'"
-
-# Set a validator in the registry.
-valido.set = (id, validator) ->
-
-  if typeof id isnt "string"
-    throw TypeError "`id` must be a string"
-
-  if typeof validator is "function"
-    return registry.set id, {test: defaultTest, assert: validator}
-
-  if isObject validator
-    unless isValidator validator
-      validator = createShape validator
-    return registry.set id, validator
-
-  throw TypeError "`validator` must be an object or function"
+  validator.name = tag
+  return registry.set tag, validator
 
 module.exports = valido
 
+# Built-in addons
+require "./addons/Constructor"
+require "./addons/Either"
+require "./addons/Maybe"
+require "./addons/Shape"
+
 #
-# Helpers
+# Built-in primitives
 #
 
-access = (obj, key) ->
-  return obj[key]
+{toString} = Object::
 
-defaultTest = (value) ->
-  return !@assert value
+# Primitive types use `typeof` to validate.
+["boolean", "function", "number", "string", "symbol"].forEach (type) ->
+  valido.set type,
+    test: (value) -> typeof value is type
+    error: (key) -> wrongType key, type
 
-isValidator = (validator) ->
+valido.set "object",
+  test: isObject
+  error: (key) -> wrongType key, "object"
 
-  if typeof validator.test isnt "function"
+valido.set "array",
+  test: Array.isArray
+  error: (key) -> wrongType key, "array"
 
-    if (typeof validator.assert is "function") or (typeof validator.error is "function")
-      throw Error "Validators must have a `test` function"
+valido.set "null",
+  test: (value) -> value is null
+  error: (key) -> TypeError "`#{key}` must be null"
 
-    return false
+valido.set "date",
+  test: (value) -> if value then (value.constructor is Date) else false
+  error: (key) -> wrongType key, "date"
 
-  if typeof validator.assert isnt "function"
-    if typeof validator.error isnt "function"
-      throw Error "Validators must have an `assert` or `error` function"
+valido.set "error",
+  test: (value) -> toString.call(value) is "[object Error]"
+  error: (key) -> wrongType key, "error"
 
-  else if typeof validator.error is "function"
-    throw Error "Validators cannot have both an `assert` and `error` function"
+valido.set "regexp",
+  test: (value) -> if value then (value.constructor is RegExp) else false
+  error: (key) -> wrongType key, "regexp"
 
-  return true
+valido.set "promise",
+  test: (value) -> if value then typeof value.then is "function" else false
+  error: (key) -> wrongType key, "promise"
 
-validateShape = (values, types) ->
-  return false unless isObject values
-  for key, type of types
+valido.set "any",
+  test: (value) -> value isnt undefined
+  error: (key) -> TypeError "`#{key}` must be defined"
 
-    result =
-      if isObject type
-      then validateShape values[key], type
-      else valido.get(type).test values[key]
-
-    if result isnt true
-      return key if result is false
-      return key + "." + result
-
-  return true
-
-createShape = (types) ->
-  test: (values) -> validateShape(values, types) is true
-  assert: (values) ->
-    result = validateShape values, types
-    return if result is true
-    return (key) ->
-
-      if result is false
-        return registry.get("object").error key
-
-      key = if key then key + "." + result else result
-      type = result.split(".").reduce access, types
-
-      if typeof type is "string"
-
-        if type[type.length - 1] is "?"
-          type = type.slice 0, -1
-
-        if 0 <= type.indexOf "|"
-          type = type.split "|"
-
-      else if Array.isArray type
-        type = type.reduce getName, []
-
-      else if isObject type
-        type = "object"
-
-      # Constructor or `valido` instance
-      else if type.name
-        type = type.name
-
-      # Anonymous type
-      else return TypeError "`#{key}` is an invalid type"
-
-      return wrongType key, type
-
-getName = (names, type) ->
-  if typeof type is "string"
-    names.push type
-  else if type.name
-    names.push type.name
-  return names
+if typeof process isnt "undefined"
+  valido.set "buffer",
+    test: Buffer.isBuffer
+    error: (key) -> wrongType key, "buffer"
