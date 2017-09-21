@@ -3,6 +3,7 @@ isObject = require "isObject"
 
 resolveError = require "../utils/resolveError"
 resolveType = require "../utils/resolveType"
+registry = require "../registry"
 valido = require "../valido"
 
 addons = valido._addons
