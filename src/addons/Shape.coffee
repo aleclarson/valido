@@ -3,6 +3,7 @@ isObject = require "isObject"
 
 resolveError = require "../utils/resolveError"
 resolveType = require "../utils/resolveType"
+registry = require "../registry"
 valido = require "../valido"
 
 addons = valido._addons
@@ -19,7 +20,7 @@ validateShape = (values) ->
   return true
 
 assertShape = (values) ->
-  result = validateShape values, @types
+  result = @validate values
   if result isnt true
     if result is false
     then registry.get("object").error
