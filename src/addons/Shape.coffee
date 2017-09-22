@@ -20,7 +20,7 @@ validateShape = (values) ->
   return true
 
 assertShape = (values) ->
-  result = validateShape values, @types
+  result = @validate values
   if result isnt true
     if result is false
     then registry.get("object").error
