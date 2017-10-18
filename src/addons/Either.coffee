@@ -15,6 +15,8 @@ validateEither = (value) ->
   return false
 
 assertEither = (value) ->
+  return if @optional and value is undefined
+  return if @nullable and value is null
   for type in @types
     result = type.validate value
     return if result is true

@@ -23,6 +23,10 @@ validator.init = (type) ->
     else registry.get type
   return
 
+Object.defineProperty validator, "name",
+  get: -> @type.name
+  set: -> throw Error "`name` is not writable"
+
 addons.Maybe = (type) ->
   inst = Object.create validator
   inst.init type
