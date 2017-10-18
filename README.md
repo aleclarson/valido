@@ -1,5 +1,5 @@
 
-# valido v1.1.2 
+# valido v1.1.3 
 
 > npm install aleclarson/valido#1.1.1
 
