@@ -6,26 +6,23 @@ valido = require "../valido"
 
 addons = valido._addons
 
-validateEither = (value) ->
+testEither = (value) ->
   return @optional if value is undefined
   return @nullable if value is null
   for type in @types
-    result = type.validate value
-    return result if result isnt false
+    return true if type.test value
   return false
 
 assertEither = (value) ->
   return if @optional and value is undefined
   return if @nullable and value is null
   for type in @types
-    result = type.validate value
-    return if result is true
-    if typeof result is "string"
-      return type.error.bind type, result
+    return unless error = type.assert value
+    return error if error.path
   return @error.bind this
 
 validator =
-  validate: validateEither
+  test: testEither
   assert: assertEither
 
 validator.init = (types) ->

@@ -4,16 +4,16 @@ valido = require "../valido"
 
 addons = valido._addons
 
-validateMaybe = (value) ->
+testMaybe = (value) ->
   return true if value is undefined
-  return @type.validate value
+  return @type.test value
 
 assertMaybe = (value) ->
   if value isnt undefined
     return @type.assert value
 
 validator = valido
-  validate: validateMaybe
+  test: testMaybe
   assert: assertMaybe
 
 validator.init = (type) ->
