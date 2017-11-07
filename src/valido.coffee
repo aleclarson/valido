@@ -1,6 +1,8 @@
 
 isObject = require "isObject"
 
+wrapAssert = require "./utils/wrapAssert"
+
 validoTag = "valido_" + Math.random().toString(16).slice 2, 6
 addons = []
 
@@ -25,24 +27,14 @@ valido = (config) ->
 
   else throw TypeError "Expected an object, function, or array"
 
-  if typeof config.test isnt "function"
+  if typeof config.assert isnt "function"
+    config.assert = defaultAssert
 
-    if typeof config.validate is "function"
-      config.test = testValidate
+  else if typeof config.test isnt "function"
+    config.test = testAssert
 
-    else if typeof config.assert is "function"
-      config.validate = defaultValidate
-      config.test = testAssert
-
-    else throw Error "Validators must have a `test`, `validate`, or `assert` function"
-
-  else
-
-    if typeof config.validate isnt "function"
-      config.validate = defaultValidate
-
-    if typeof config.assert isnt "function"
-      config.assert = defaultAssert
+  # All validators have their `validate` method wrapped.
+  config.assert = wrapAssert config.assert
 
   # This is used for identifying validators.
   Object.defineProperty config, validoTag, {value: true}
@@ -63,26 +55,20 @@ module.exports = valido
 # Helpers
 #
 
-testValidate = (value) ->
-  return @validate(value) is true
-
 testAssert = (value) ->
   return @assert(value) is undefined
-
-defaultValidate = (value) ->
-  return @test value
 
 defaultAssert = (value) ->
   return @error unless @test value
 
 isValidator = (config) ->
 
-  if typeof config.test isnt "function"
-    if typeof config.validate isnt "function"
-      return false if typeof config.assert isnt "function"
+  if typeof config.assert is "function"
+    return true
 
-  if typeof config.assert isnt "function"
-    if typeof config.error isnt "function"
-      throw Error "Validators must have an `assert` or `error` function"
+  if typeof config.test is "function"
+    return true if typeof config.error is "function"
+    return true if typeof config.assert is "function"
+    throw Error "Validators must have an `assert` or `error` function"
 
-  return true
+  return false
